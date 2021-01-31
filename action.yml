@@ -1,0 +1,41 @@
+name: 'action-push-local-changes'
+description: 'Commit and push local changes to remote repository'
+author: 'alessiovierti'
+branding:
+  icon: upload-cloud
+  color: purple
+
+inputs:
+  commit-username:
+    description: 'Commit username'
+    required: false
+    default: 'github-actions'
+  commit-email:
+    description: 'Commit email'
+    required: false
+    default: '41898282+github-actions[bot]@users.noreply.github.com'
+  commit-message:
+    description: 'Commit message'
+    required: true
+
+outputs:
+  commit-hash:
+    description: 'Latest commit hash'
+    value: ${{ steps.fetch-latest-commit-hash.outputs.commit-hash }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: push-local-repository-changes
+      run: |
+        git config --global user.name "${{ inputs.commit-username }}"
+        git config --global user.email "${{ inputs.commit-email }}"
+        git add -A
+        git commit -m "${{ inputs.commit-message }}"
+        git push "https://${GITHUB_ACTOR}:${{ env.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" HEAD:master --force
+      shell: bash
+    - id: fetch-latest-commit-hash
+      run: |
+        export LATEST_HASH=$(git log -1 --format="%H")
+        echo "::set-output name=commit-hash::$(echo $LATEST_HASH)"
+      shell: bash
